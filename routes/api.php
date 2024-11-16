@@ -2,54 +2,12 @@
 
 use App\Http\Controllers\BlockController;
 use App\Http\Controllers\CommentController;
-use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FollowRequestController;
 use App\Http\Controllers\LikeController;
-use App\Http\Controllers\RegisteredUserController;
-use App\Http\Controllers\SessionController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TweetController;
 use Illuminate\Support\Facades\Route;
-
-// * User registration and management routes
-Route::post('/register', [RegisteredUserController::class, 'store']);
-Route::prefix('account')->middleware('auth:api')->group(function () {
-    // Update user profile
-    Route::put('/', [RegisteredUserController::class, 'update']);
-    // Delete user account
-    Route::delete('/', [RegisteredUserController::class, 'destroy']);
-});
-
-
-// * Email verification routes
-Route::prefix('email/verify')->middleware('throttle:6,1')->group(function () {
-    // Verify email
-    Route::post('/', [EmailVerificationController::class, 'verify'])
-        ->name('verification.verify');
-
-    // Resend email verification link
-    Route::post('/resend', [EmailVerificationController::class, 'resend'])
-        ->middleware(['auth:api'])
-        ->name('verification.resend');
-});
-
-// * Session management routes
-Route::prefix('auth')->group(function () {
-    // Login route
-    Route::post('/login', [SessionController::class, 'login']);
-
-    // Logout route
-    Route::post('/logout', [SessionController::class, 'logout'])
-        ->middleware('auth:api');
-
-    // Logout from all sessions
-    Route::post('/logout-all', [SessionController::class, 'logoutAll'])
-        ->middleware('auth:api');
-
-    // Refresh token route
-    Route::post('/refresh', [SessionController::class, 'refresh'])
-        ->middleware('auth:api');
-});
 
 // * Tweets routes
 Route::middleware(['auth:api'])->prefix('tweets')->group(function () {
@@ -124,4 +82,11 @@ Route::middleware('auth:api')->group(function () {
 
     // View the likers of a tweet
     Route::get('/tweets/{tweet}/likers', [LikeController::class, 'index']);
+});
+
+// * Profile routes
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('/{user}', [ProfileController::class, 'show']);
+    Route::get('/{user}/followers', [ProfileController::class, 'followers']);
+    Route::get('/{user}/following', [ProfileController::class, 'following']);
 });

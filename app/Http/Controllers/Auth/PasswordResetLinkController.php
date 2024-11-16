@@ -29,11 +29,9 @@ class PasswordResetLinkController extends Controller
         );
 
         if ($status != Password::RESET_LINK_SENT) {
-            throw ValidationException::withMessages([
-                'email' => [__($status)],
-            ]);
+            return response()->json(['error' => __($status)], 400);
         }
 
-        return response()->json(['status' => __($status)]);
+        return response()->json(['status' => __($status)], 200);
     }
 }

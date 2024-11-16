@@ -8,6 +8,12 @@ use Illuminate\Support\Facades\Gate;
 
 class ProfileController extends Controller
 {
+    /**
+     * Retrieve the list of users that follow the given user.
+     * 
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function followers(User $user): JsonResponse
     {
         if (Gate::denies('viewProfile', $user)) {
@@ -19,6 +25,12 @@ class ProfileController extends Controller
         ]);
     }
 
+    /**
+     * Retrieve the list of users that the given user is following.
+     * 
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function following(User $user): JsonResponse
     {
         if (Gate::denies('viewProfile', $user)) {
@@ -29,4 +41,18 @@ class ProfileController extends Controller
             'following' => $user->following(),
         ]);
     }
+
+
+    /**
+     * Display the specified user by ID.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show(User $user): JsonResponse
+    {
+        $user = User::findOrFail($user->id);
+        return response()->json($user);
+    }
+
 }

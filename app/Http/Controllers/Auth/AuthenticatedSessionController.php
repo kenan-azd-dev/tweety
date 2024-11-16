@@ -4,35 +4,67 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Handle an incoming authentication request.
+     * Handles login and returns an authentication token.
+     *
+     * @param LoginRequest $request
+     * @return JsonResponse
      */
-    public function store(LoginRequest $request): Response
+    public function store(LoginRequest $request): JsonResponse
     {
+        // Authenticate
         $request->authenticate();
 
+        // Regenerate
         $request->session()->regenerate();
 
-        return response()->noContent();
+        // Generate an API token
+        $user = Auth::user();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful.',
+            'token' => $token,
+            'user' => $user,
+        ], 200);
     }
 
     /**
-     * Destroy an authenticated session.
+     * Destroy an authenticated session and return a JSON response.
+     * 
+     * Revoke the user's token, and return a successful logout message.
+     * 
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function destroy(Request $request): Response
+    public function destroy(): JsonResponse
     {
-        Auth::guard('web')->logout();
+        // Revoke the user's token
+        Auth::user()->currentAccessToken()->delete();
 
-        $request->session()->invalidate();
+        return response()->json([
+            'message' => 'Logout successful.'
+        ], 200);
+    }
 
-        $request->session()->regenerateToken();
+    /**
+     * Logs out the user of all sessions.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroyAll(Request $request): JsonResponse
+    {
+        // Revoke all tokens for the user
+        $request->user()->tokens()->delete();
 
-        return response()->noContent();
+        return response()->json(['message' => 'Logged out from all devices.'], 200);
     }
 }

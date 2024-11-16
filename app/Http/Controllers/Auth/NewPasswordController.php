@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\ValidationException;
 
 class NewPasswordController extends Controller
 {
@@ -21,15 +20,23 @@ class NewPasswordController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // Validate the request input
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'current_password' => ['required_with:password,email', 'string'],
         ]);
 
-        // Here we will attempt to reset the user's password. If it is successful we
-        // will update the password on an actual user model and persist it to the
-        // database. Otherwise we will parse the error and return the response.
+        // Retrieve the user by email
+        $user = \App\Models\User::where('email', $request->email)->first();
+
+        // Check if the current password matches
+        if (!$user || !Hash::check($request->current_password, $user->password)) {
+            return response()->json(['error' => 'The provided current password is incorrect.'], 400);
+        }
+
+        // Proceed with the password reset
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {
@@ -42,12 +49,12 @@ class NewPasswordController extends Controller
             }
         );
 
+        // Handle password reset failure
         if ($status != Password::PASSWORD_RESET) {
-            throw ValidationException::withMessages([
-                'email' => [__($status)],
-            ]);
+            return response()->json(['error' => __($status)], 400);
         }
 
-        return response()->json(['status' => __($status)]);
+        // Respond with success
+        return response()->json(['status' => __($status)], 200);
     }
 }
